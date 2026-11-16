@@ -1,295 +1,88 @@
-from abc import ABC, abstractmethod
-from datetime import datetime
-import json
-import hashlib
-import uuid
-
-
-# =========================
-# MODELS
-# =========================
-
-class User:
-    def __init__(self, username, password, role="user"):
-        self.id = str(uuid.uuid4())
-        self.username = username
-        self.password_hash = self._hash_password(password)
-        self.role = role
-        self.created_at = datetime.now()
-
-    def _hash_password(self, password):
-        return hashlib.sha256(password.encode()).hexdigest()
-
-    def verify_password(self, password):
-        return self.password_hash == hashlib.sha256(
-            password.encode()
-        ).hexdigest()
-
-
-class Record:
-    def __init__(self, title, value):
-        self.id = str(uuid.uuid4())
-        self.title = title
-        self.value = value
-        self.created_at = datetime.now()
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "title": self.title,
-            "value": self.value,
-            "created_at": self.created_at.isoformat()
-        }
-
-
-# =========================
-# REPOSITORY
-# =========================
-
-class Repository(ABC):
-
-    @abstractmethod
-    def save(self, item):
-        pass
-
-    @abstractmethod
-    def get_all(self):
-        pass
-
-    @abstractmethod
-    def delete(self, item_id):
-        pass
-
-
-class RecordRepository(Repository):
-
-    def __init__(self):
-        self.records = []
-
-    def save(self, record):
-        self.records.append(record)
-
-    def get_all(self):
-        return self.records
-
-    def delete(self, item_id):
-        self.records = [
-            r for r in self.records
-            if r.id != item_id
-        ]
-
-
-# =========================
-# AUDIT SYSTEM
-# =========================
-
-class AuditLogger:
-
-    @staticmethod
-    def log(action, username):
-        timestamp = datetime.now()
-
-        with open("audit.log", "a") as file:
-            file.write(
-                f"{timestamp} | "
-                f"{username} | "
-                f"{action}\n"
-            )
-
-
-# =========================
-# BUSINESS LOGIC
-# =========================
-
-class RecordService:
-
-    def __init__(self, repository):
-        self.repository = repository
-
-    def create_record(self, title, value):
-
-        if len(title) < 3:
-            raise ValueError(
-                "Title must be at least 3 characters"
-            )
-
-        if value < 0:
-            raise ValueError(
-                "Value cannot be negative"
-            )
-
-        record = Record(title, value)
-        self.repository.save(record)
-
-        return record
-
-    def calculate_statistics(self):
-
-        records = self.repository.get_all()
-
-        if not records:
-            return None
-
-        values = [r.value for r in records]
-
-        return {
-            "count": len(values),
-            "total": sum(values),
-            "average": sum(values) / len(values),
-            "max": max(values),
-            "min": min(values)
-        }
-
-
-# =========================
-# REPORT ENGINE
-# =========================
-
-class ReportGenerator:
-
-    def generate_json_report(self, records):
-
-        report = [
-            record.to_dict()
-            for record in records
-        ]
-
-        with open(
-            "report.json",
-            "w"
-        ) as file:
-            json.dump(
-                report,
-                file,
-                indent=4
-            )
-
-
-# =========================
-# APPLICATION
-# =========================
-
-class Application:
-
-    def __init__(self):
-
-        self.users = {}
-
-        self.repo = RecordRepository()
-
-        self.service = RecordService(
-            self.repo
-        )
-
-        self.report_generator = ReportGenerator()
-
-    def register(self,
-                 username,
-                 password,
-                 role="user"):
-
-        if username in self.users:
-            raise Exception(
-                "Username already exists"
-            )
-
-        user = User(
-            username,
-            password,
-            role
-        )
-
-        self.users[username] = user
-
-        AuditLogger.log(
-            "REGISTER",
-            username
-        )
-
-    def login(
-        self,
-        username,
-        password
-    ):
-
-        user = self.users.get(username)
-
-        if not user:
-            return None
-
-        if user.verify_password(password):
-
-            AuditLogger.log(
-                "LOGIN",
-                username
-            )
-
-            return user
-
-        return None
-
-    def add_record(
-        self,
-        user,
-        title,
-        value
-    ):
-
-        record = self.service.create_record(
-            title,
-            value
-        )
-
-        AuditLogger.log(
-            f"ADD_RECORD:{record.id}",
-            user.username
-        )
-
-        return record
-
-
-# =========================
-# MAIN
-# =========================
-
-if __name__ == "__main__":
-
-    app = Application()
-
-    app.register(
-        "admin",
-        "Password123",
-        "admin"
-    )
-
-    user = app.login(
-        "admin",
-        "Password123"
-    )
-
-    if user:
-
-        app.add_record(
-            user,
-            "Revenue",
-            10000
-        )
-
-        app.add_record(
-            user,
-            "Expenses",
-            4500
-        )
-
-        stats = app.service.calculate_statistics()
-
-        print("\nStatistics:")
-        print(stats)
-
-        app.report_generator.generate_json_report(
-            app.repo.get_all()
-        )
-
-        print(
-            "\nReport generated successfully."
-        )
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#263e36">
+  <meta name="description" content="Eliyas Eshtea — software developer and technology professional building useful digital experiences.">
+  <meta property="og:title" content="Eliyas Eshtea | Portfolio">
+  <meta property="og:description" content="Business · Technology · Innovation">
+  <meta property="og:type" content="website">
+  <title>Eliyas Eshtea — Portfolio</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="Eliyas Eshtea home"><span class="brand-mark">E</span><span>ELIYAS ESHTEA<span class="brand-dot">.</span></span></a>
+      <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#about">About</a><a href="#expertise">Expertise</a><a href="#projects">Projects</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Let's connect <span>↗</span></a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero section-wrap" id="home">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span class="eyebrow-line"></span> BUSINESS · TECHNOLOGY · INNOVATION</p>
+          <h1>Turning thoughtful ideas into <em>useful technology.</em></h1>
+          <p class="hero-lede">I’m Eliyas Eshtea — a developer and technology professional interested in building practical digital experiences, solving complex problems, and connecting technology with real-world needs.</p>
+          <div class="hero-actions"><a class="button button-dark" href="#projects">Explore my work <span>↗</span></a><a class="text-link" href="#about">Get to know me <span>↓</span></a></div>
+          <div class="hero-note"><span class="note-dot"></span> Based in the Kansas City area · Open to learning and collaboration</div>
+        </div>
+        <div class="hero-art reveal" aria-label="Abstract architectural portfolio artwork">
+          <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+          <div class="art-panel"><span class="art-index">01 / THE PRACTICE</span><div class="art-monogram">E<span>.</span></div><span class="art-caption">Curiosity into capability.</span></div>
+          <div class="art-stamp">BUILD<br>WITH<br>PURPOSE</div>
+          <div class="art-bottom"><span>DESIGN</span><span>ENGINEER</span><span>IMPROVE</span></div>
+        </div>
+        <div class="hero-scroll"><span></span> SCROLL TO EXPLORE</div>
+      </section>
+
+      <section class="intro-strip"><p>Curious by nature. Practical by design. Always building forward.</p><span>✳</span></section>
+
+      <section class="section section-wrap about-section" id="about">
+        <div class="section-kicker reveal"><span>01</span><span>THE PERSON BEHIND THE WORK</span></div>
+        <div class="about-grid">
+          <div class="section-heading reveal"><p class="eyebrow">A LITTLE ABOUT ME</p><h2>Technology is most powerful when it <em>serves people.</em></h2></div>
+          <div class="about-copy reveal"><p class="large-copy">I enjoy understanding how things work, finding the real problem, and shaping a solution that is clear, useful, and dependable.</p><p>My learning journey spans full-stack development, databases, cloud and systems technologies, alongside an interest in business processes and practical problem-solving. I value steady improvement, thoughtful teamwork, and building things that make a difference.</p><p>This portfolio brings together my current projects and the technical foundations developed through earlier learning and hands-on practice.</p><a class="inline-link" href="https://github.com/Ella-tec" target="_blank" rel="noreferrer">Explore my GitHub profile <span>↗</span></a></div>
+        </div>
+      </section>
+
+      <section class="section expertise-section" id="expertise">
+        <div class="section-wrap">
+          <div class="section-kicker reveal"><span>02</span><span>WHAT I BRING TO THE TABLE</span></div>
+          <div class="section-heading reveal"><p class="eyebrow">SKILLS & INTERESTS</p><h2>A growing toolkit for <em>real-world work.</em></h2><p class="heading-support">A selection of technologies and disciplines from my current and earlier GitHub profiles.</p></div>
+          <div class="expertise-grid">
+            <article class="expertise-card reveal"><span class="card-number">01</span><div class="expertise-icon">⌘</div><h3>Full-Stack Development</h3><p>Building across the interface and application layers, with a focus on clear user experiences and maintainable code.</p><div class="tag-list"><span>Python</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Flask</span><span>Django</span><span>HTML / CSS</span></div></article>
+            <article class="expertise-card reveal"><span class="card-number">02</span><div class="expertise-icon">▤</div><h3>Data & Backend</h3><p>Working with structured data, application logic, APIs, and the foundations that help systems communicate.</p><div class="tag-list"><span>SQL</span><span>PostgreSQL</span><span>REST APIs</span><span>Databases</span><span>TypeScript</span></div></article>
+            <article class="expertise-card reveal"><span class="card-number">03</span><div class="expertise-icon">⌁</div><h3>Systems & Cloud</h3><p>Exploring infrastructure, development environments, automation, and dependable deployment workflows.</p><div class="tag-list"><span>Linux</span><span>Docker</span><span>Bash</span><span>Git</span><span>AWS</span><span>Azure</span></div></article>
+            <article class="expertise-card reveal"><span class="card-number">04</span><div class="expertise-icon">◎</div><h3>Problem Solving</h3><p>Breaking down ambiguous challenges, learning new tools, and approaching solutions with curiosity and care.</p><div class="tag-list"><span>C</span><span>Debugging</span><span>Collaboration</span><span>Systems thinking</span></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-wrap projects-section" id="projects">
+        <div class="section-kicker reveal"><span>03</span><span>SELECTED WORK</span></div>
+        <div class="projects-top"><div class="section-heading reveal"><p class="eyebrow">PROJECTS IN PROGRESS & PRACTICE</p><h2>Ideas taking <em>shape.</em></h2></div><p class="projects-intro reveal">A few examples of the problems I’m exploring through software. Project status is described honestly; concepts and demo workflows are not presented as production-ready services.</p></div>
+        <div class="project-list">
+          <article class="project-card project-featured reveal"><div class="project-visual visual-finova"><span class="visual-label">01 / FINANCIAL TECHNOLOGY</span><div class="visual-window"><div class="window-top"><i></i><i></i><i></i><span>FINOVA / WORKSPACE</span></div><div class="window-content"><div class="window-side"></div><div class="window-main"><span class="window-small">FINANCIAL OVERVIEW</span><div class="window-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="window-lines"><i></i><i></i><i></i></div></div></div></div><span class="visual-corner">F.</span></div><div class="project-info"><div class="project-meta"><span>ACCOUNTING · AUDIT · AI</span><span>IN DEVELOPMENT</span></div><h3>FINOVA</h3><p>A finance and audit workflow platform concept bringing accounting operations, reporting, document management, and AI-assisted support into one experience.</p><div class="project-tech"><span>Next.js</span><span>TypeScript</span><span>Prisma</span><span>Tailwind CSS</span></div><a class="inline-link" href="https://github.com/Ella-tec/finova" target="_blank" rel="noreferrer">View repository <span>↗</span></a></div></article>
+          <article class="project-card reveal"><div class="project-visual visual-mela"><span class="visual-label">02 / LOCAL SERVICES</span><div class="map-art"><div class="map-road road-a"></div><div class="map-road road-b"></div><div class="map-road road-c"></div><div class="map-pin">✦</div><span class="map-place">KANSAS CITY</span></div><span class="visual-corner">M.</span></div><div class="project-info"><div class="project-meta"><span>COMMUNITY · SERVICES · MAPS</span><span>IN DEVELOPMENT</span></div><h3>Mela</h3><p>A local home-services platform concept focused on helping people discover services and connect with providers in the Kansas City area.</p><div class="project-tech"><span>React</span><span>TypeScript</span><span>ASP.NET Core</span><span>Leaflet</span></div><a class="inline-link" href="https://github.com/Ella-tec/aba-mela" target="_blank" rel="noreferrer">View repository <span>↗</span></a></div></article>
+          <article class="project-card reveal"><div class="project-visual visual-isa"><span class="visual-label">03 / TRUSTED INFORMATION</span><div class="isa-art"><div class="isa-ring ring-a"></div><div class="isa-ring ring-b"></div><div class="isa-core">ISA</div><span class="isa-node node-a"></span><span class="isa-node node-b"></span><span class="isa-node node-c"></span></div><span class="visual-corner">I.</span></div><div class="project-info"><div class="project-meta"><span>AI · KNOWLEDGE · GOVERNANCE</span><span>PROJECT WORK</span></div><h3>ISACA Trusted Resource</h3><p>An application project exploring an AI-assisted chat experience, trusted knowledge access, analytics, and governance-focused workflows.</p><div class="project-tech"><span>Blazor</span><span>C#</span><span>.NET</span><span>SQLite</span></div><a class="inline-link" href="https://github.com/Ella-tec/ISACA_TRU_Final_Complete" target="_blank" rel="noreferrer">View repository <span>↗</span></a></div></article>
+        </div>
+        <div class="older-work reveal"><div><span class="eyebrow">EARLIER FOUNDATIONS</span><h3>Learning by building.</h3></div><p>My previous <a href="https://github.com/malu17" target="_blank" rel="noreferrer">GitHub profile</a> includes earlier ALX learning and projects in C, Python, JavaScript, Flask, Django, Linux, and systems programming.</p><a class="inline-link" href="https://github.com/malu17" target="_blank" rel="noreferrer">Explore earlier repositories <span>↗</span></a></div>
+      </section>
+
+      <section class="journey-section" id="journey"><div class="section-wrap"><div class="section-kicker reveal"><span>04</span><span>THE JOURNEY CONTINUES</span></div><div class="journey-grid"><div class="section-heading reveal"><p class="eyebrow">LEARNING & GROWTH</p><h2>Stay curious.<br><em>Keep moving.</em></h2></div><div class="journey-copy reveal"><div class="journey-item"><span>01</span><div><h3>Build strong foundations</h3><p>Developing fluency in programming, databases, APIs, version control, and software engineering practices.</p></div></div><div class="journey-item"><span>02</span><div><h3>Connect technology to people</h3><p>Exploring how software, business processes, and thoughtful design can work together to solve practical problems.</p></div></div><div class="journey-item"><span>03</span><div><h3>Learn through collaboration</h3><p>Staying open to feedback, new perspectives, and opportunities to contribute to meaningful projects.</p></div></div></div></div></div></section>
+
+      <section class="contact-section section-wrap" id="contact"><div class="contact-panel reveal"><div class="contact-orbit"></div><p class="eyebrow">05 / START A CONVERSATION</p><h2>Good work begins<br>with a <em>conversation.</em></h2><p class="contact-copy">Interested in a project, collaboration, or exchanging ideas? I’d be glad to connect.</p><a class="button button-light" href="mailto:tecaddis@gmail.com">Send me an email <span>↗</span></a><div class="contact-links"><a href="https://github.com/Ella-tec" target="_blank" rel="noreferrer">GitHub ↗</a><a href="https://www.linkedin.com/in/eliyas-eshtea-249728268" target="_blank" rel="noreferrer">LinkedIn ↗</a><a href="https://twitter.com/eliasfiseha1" target="_blank" rel="noreferrer">Twitter ↗</a></div></div></section>
+    </main>
+    <footer class="site-footer section-wrap"><a class="brand" href="#home"><span class="brand-mark">E</span><span>ELIYAS ESHTEA<span class="brand-dot">.</span></span></a><p>Designed with intention. Built with curiosity.</p><span>© <span id="year"></span> Eliyas Eshtea</span></footer>
+  </div>
+</body>
+</html>
