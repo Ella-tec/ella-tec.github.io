@@ -1,0 +1,75 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/providers";
+
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+const siteUrl = process.env.NEXTAUTH_URL || "https://finova.ai";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: { default: "Finova | Accounting, Audit & Finance Platform", template: "%s | Finova" },
+  description:
+    "Finova brings accounting operations, financial reporting, bank reconciliation, month-end close, audit workpapers, secure client collaboration, and AI-assisted document workflows into one workspace.",
+  keywords: [
+    "Finova",
+    "accounting software",
+    "accounting ERP",
+    "audit management",
+    "financial statements",
+    "month-end close",
+    "trial balance",
+    "PBC requests",
+    "client portal",
+    "bank reconciliation",
+    "multi-entity consolidation",
+    "document intelligence",
+    "accounting workflow automation",
+  ],
+  authors: [{ name: "Finova" }],
+  creator: "Finova",
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: ["/logo.svg"],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "Finova",
+    title: "Finova | Accounting, Audit & Finance Platform",
+    description:
+      "A connected workspace for accounting teams, auditors, controllers, and their clients.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Finova",
+    description: "Accounting, audit, and client collaboration in one workspace.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  alternates: { canonical: siteUrl },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${inter.className} min-h-screen antialiased bg-[#f5f7f5] text-slate-900 selection:bg-emerald-100 selection:text-emerald-900`}
+      >
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
